@@ -128,6 +128,50 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Change Password
+app.post("/change-password", authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Current password and new password are required",
+      });
+    }
+
+    const user = users.find(
+      (user) => user.id === req.user.id
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const passwordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!passwordValid) {
+      return res.status(401).json({
+        message: "Current password is incorrect",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+
+    res.json({
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+});
+
 // Protected profile route
 app.get("/profile", authenticateToken, (req, res) => {
   const user = users.find(
